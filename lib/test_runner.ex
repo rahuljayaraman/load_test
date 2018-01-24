@@ -27,14 +27,14 @@ defmodule LoadTest.TestRunner do
     run = fn idx ->
       {time, res} = :timer.tc(test_runner, [idx])
       cond do
-        res.status_code > 201 -> {false, time, res.status_code}
+        res.status_code > 201 -> {false, time, res}
         true -> {true, time}
       end
     end
 
     Enum.chunk(start_idx..start_idx + times + 1, concurrent)
     |> Enum.map(fn iteration  ->
-      IO.puts("Running #{inspect(iteration)}")
+      IO.puts("Iteration #{inspect(iteration)}")
       pmap(iteration, run)
     end)
     |> print_results()
@@ -49,6 +49,7 @@ defmodule LoadTest.TestRunner do
       if elem(iteration, 0) do
         %{success: acc.success + 1, failed: acc.failed, time: calc_time.(acc, iteration)}
       else
+        File.write!("./errors.txt", "#{inspect(elem(iteration, 2))}\n", [:append])
         %{success: acc.success, failed: acc.failed + 1, time: calc_time.(acc, iteration)}
       end
     end)
