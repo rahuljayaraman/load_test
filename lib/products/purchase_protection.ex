@@ -1,7 +1,6 @@
 defmodule LoadTest.Products.PurchaseProtection do
   def run(idx, base_url, headers) do
-    :ok = :hackney_pool.start_pool(:pool, [timeout: 15000, max_connections: 10000])
-    HTTPoison.post!(build_url(base_url), build_request_body(idx), headers, hackney: [pool: :pool])
+    HTTPoison.post!(build_url(base_url), build_request_body(idx), headers)
   end
 
   defp build_url(base_url) do
