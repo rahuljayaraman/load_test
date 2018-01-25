@@ -21,11 +21,22 @@ defmodule LoadTest.TestRunner do
     run_tests(test_runner, times, concurrent, start_idx)
   end
 
-  defp build_test_runner(func, base_url, headers), do: &(func.(&1, base_url, headers))
+  defp build_test_runner(func, base_url, headers), do: &(retry(1, fn -> func.(&1, base_url, headers) end))
+
+  defp retry(0, yield) do
+    yield.()
+  end
+
+  defp retry(n, yield) when n > 0 do
+    case yield.() do
+      {:error, _} -> retry(n - 1, yield)
+      res -> res
+    end
+  end
 
   defp run_tests(test_runner, times, concurrent, start_idx) do
     run = fn idx ->
-      {time, res} = :timer.tc(test_runner, [idx])
+      {time, {:ok, res}} = :timer.tc(test_runner, [idx])
       cond do
         res.status_code > 201 -> {false, time, res}
         true -> {true, time}
@@ -38,6 +49,7 @@ defmodule LoadTest.TestRunner do
       pmap(iteration, run)
     end)
     |> print_results()
+
   end
 
   defp print_results(results) do
